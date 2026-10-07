@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Modern, puan sistemli, zamanlayıcılı, isim tahminli ve sesli Sayı Tahmin Oyunu.">
+  <title>Sayı Tahmin Oyunu | Number & Name Guess Master</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Arka Plan Animasyonlu Işık Küreleri -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Konfeti Çizim Alanı -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Uçan Balonlar Kutusu -->
+  <div id="balloons-container" class="balloons-container"></div>
+
+  <!-- Skora Göre Dinamik Arka Plan Simgeleri -->
+  <div id="score-ambient-icons" class="score-ambient-icons"></div>
+
+  <!-- Puan Artışı Uçan Efekt Alanı -->
+  <div id="floating-scores-container"></div>
+
+  <div class="app-container">
+    <!-- Üst Başlık & Kontroller -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">🎯</div>
+        <div class="brand-text">
+          <h1>Asaf <span>Sayı & İsim</span></h1>
+          <p>Asaf Özel Versiyonu • Tahmin et, yarış, zirveye çık!</p>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <!-- Oyuncu Profil Rozeti (Asaf) -->
+        <div class="player-profile-badge" id="player-profile-badge" title="Oyuncu İsmini Değiştir">
+          <span class="player-avatar" id="player-avatar-icon">👑</span>
+          <div class="player-info">
+            <span class="player-name" id="player-name-display">Asaf</span>
+            <span class="player-rank" id="player-rank-display">🌱 Çaylak</span>
+          </div>
+          <button type="button" class="player-edit-btn" id="player-edit-btn" title="İsmi Değiştir" aria-label="İsmi Değiştir">✏️</button>
+        </div>
+
+        <!-- Toplam Puan Rozeti -->
+        <div class="score-badge" id="score-badge" title="Toplam Puanınız">
+          <span class="score-icon">⭐</span>
+          <span class="score-title">Puan:</span>
+          <span class="score-val" id="total-score-val">0</span>
+        </div>
+
+        <div class="header-actions">
+          <button id="leaderboard-btn" class="icon-btn highlight-btn" title="Puan Sıralaması" aria-label="Puan Sıralaması">
+            <span>🏆</span>
+            <span class="btn-text-badge">Sıralama</span>
+          </button>
+          <button id="sound-btn" class="icon-btn" title="Sesi Aç / Kapat" aria-label="Sesi Aç veya Kapat">
+            <span id="sound-icon">🔊</span>
+          </button>
+          <button id="help-btn" class="icon-btn" title="Nasıl Oynanır?" aria-label="Nasıl Oynanır">
+            <span>❓</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Zamanlayıcı Barı -->
+    <section class="timer-section" id="timer-section">
+      <div class="timer-header">
+        <div class="timer-label">
+          <span class="timer-icon" id="timer-icon">⏱️</span>
+          <span>Kalan Süre:</span>
+        </div>
+        <span class="timer-countdown" id="timer-val">45s</span>
+      </div>
+      <div class="timer-track">
+        <div class="timer-fill" id="timer-fill"></div>
+      </div>
+    </section>
+
+    <!-- Ana Oyun Kartı (Glassmorphism) -->
+    <main class="game-card">
+      
+      <!-- Zorluk Seçici -->
+      <section class="difficulty-section">
+        <span class="section-label">Zorluk Seviyesi</span>
+        <div class="difficulty-pills" role="radiogroup" aria-label="Zorluk Seviyeleri">
+          <button class="diff-btn" data-diff="easy" id="diff-easy">
+            <span class="diff-emoji">🟢</span>
+            <span class="diff-name">Kolay</span>
+            <span class="diff-desc">1 - 50 (10 Hak • 60s)</span>
+          </button>
+          <button class="diff-btn active" data-diff="medium" id="diff-medium">
+            <span class="diff-emoji">🟡</span>
+            <span class="diff-name">Orta</span>
+            <span class="diff-desc">1 - 100 (7 Hak • 45s)</span>
+          </button>
+          <button class="diff-btn" data-diff="hard" id="diff-hard">
+            <span class="diff-emoji">🔴</span>
+            <span class="diff-name">Zor</span>
+            <span class="diff-desc">1 - 200 (5 Hak • 30s)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- İstatistik ve Can Barı -->
+      <section class="stats-bar">
+        <div class="stat-box">
+          <span class="stat-title">🏆 En İyi Skor</span>
+          <span class="stat-value" id="high-score-val">-</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-title">🎯 Tahmin Sayısı</span>
+          <span class="stat-value" id="guess-count-val">0</span>
+        </div>
+        <div class="stat-box lives-box">
+          <div class="stat-top">
+            <span class="stat-title">❤️ Kalan Hak</span>
+            <span class="lives-number" id="lives-count-text">7/7</span>
+          </div>
+          <div class="hearts-container" id="hearts-container"></div>
+        </div>
+      </section>
+
+      <!-- Can İlerleme Çubuğu -->
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="lives-progress-bar"></div>
+      </div>
+
+      <!-- Akıllı Aralık Göstergesi (Bracket Indicator) -->
+      <section class="range-tracker">
+        <div class="range-labels">
+          <span id="range-min-badge" class="badge">Min: 1</span>
+          <span class="range-status" id="range-status-text">Olası Aralık: 1 ile 100 arasında</span>
+          <span id="range-max-badge" class="badge">Max: 100</span>
+        </div>
+        <div class="range-track-bg">
+          <div class="range-track-fill" id="range-track-fill"></div>
+        </div>
+      </section>
+
+      <!-- SON HAK JOKER PANELİ (Kalan Hak 1 Olunca Açılır) -->
+      <section class="last-life-panel" id="last-life-panel" style="display: none;">
+        <div class="last-life-banner">
+          <span class="pulse-warning-icon">🚨</span>
+          <div class="last-life-text">
+            <strong>DİKKAT: SON HAKKIN KALDI!</strong>
+            <span>Kalan olası sayılar senin için şıklara dönüştürüldü:</span>
+          </div>
+        </div>
+        <div class="options-grid" id="options-grid">
+          <!-- Dinamik Olarak A, B, C, D butonları eklenecek -->
+        </div>
+      </section>
+
+      <!-- Tahmin Giriş Alanı -->
+      <section class="guess-input-section">
+        <form id="guess-form" onsubmit="return false;">
+          <div class="input-wrapper" id="input-wrapper">
+            <button type="button" class="step-btn" id="btn-decrease" title="1 Azalt" aria-label="1 Azalt">−</button>
+            <input 
+              type="number" 
+              id="guess-input" 
+              placeholder="Sayı gir..." 
+              autocomplete="off" 
+              inputmode="numeric"
+              required
+              aria-label="Tahmin Ettiğiniz Sayı"
+            />
+            <button type="button" class="step-btn" id="btn-increase" title="1 Artır" aria-label="1 Artır">+</button>
+          </div>
+          
+          <button type="submit" id="submit-btn" class="btn-primary">
+            <span>Tahmin Et</span>
+            <span class="btn-arrow">🚀</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Dinamik Geri Bildirim ve İpucu Kartı -->
+      <section class="feedback-card" id="feedback-card">
+        <div class="feedback-icon" id="feedback-icon">🎲</div>
+        <div class="feedback-body">
+          <div class="feedback-title" id="feedback-title">Hazır mısın?</div>
+          <div class="feedback-desc" id="feedback-desc">Bir sayı yaz ve tahmin butonuna bas!</div>
+        </div>
+        <div class="temperature-badge" id="temperature-badge">
+          <span id="temp-icon">✨</span>
+          <span id="temp-text">Başlangıç</span>
+        </div>
+      </section>
+
+      <!-- GİZLİ İSİM TAHMİNİ ALANI (BONUS +10 PUAN) -->
+      <section class="mystery-name-card" id="mystery-name-card">
+        <div class="name-card-header">
+          <div class="name-card-title">
+            <span class="name-icon">👤</span>
+            <div>
+              <h3>Gizli İsim Tahmini</h3>
+              <p class="name-subtitle">Doğru tahmin et ve ekstra <strong>+10 Puan</strong> kazan!</p>
+            </div>
+          </div>
+          <span class="name-category-badge" id="name-category-badge">🔬 Bilim İnsanı</span>
+        </div>
+
+        <div class="name-clue-box">
+          <div class="name-clue-label">İpucu:</div>
+          <div class="name-clue-text" id="name-clue-text">Yerçekimi kanununu bulan ünlü dahi.</div>
+        </div>
+
+        <!-- Harf Kutuları -->
+        <div class="letter-boxes-row" id="letter-boxes-row">
+          <!-- Dinamik harf kutuları -->
+        </div>
+
+        <form id="name-guess-form" class="name-input-row" onsubmit="return false;">
+          <input 
+            type="text" 
+            id="name-input" 
+            placeholder="İsim tahmininizi yazın..." 
+            autocomplete="off" 
+            aria-label="Gizli İsim Tahmini"
+          />
+          <button type="submit" id="name-submit-btn" class="btn-secondary">
+            <span>İsmi Doğrula</span>
+            <span>✨</span>
+          </button>
+        </form>
+
+        <div class="name-status-feedback" id="name-status-feedback"></div>
+      </section>
+
+      <!-- Tahmin Geçmişi Çipleri -->
+      <section class="history-section">
+        <div class="history-header">
+          <span class="history-title">📜 Tahmin Geçmişin</span>
+          <span class="history-count" id="history-count">(0)</span>
+        </div>
+        <div class="history-chips" id="history-chips">
+          <div class="history-empty" id="history-empty">Henüz tahmin yapmadın.</div>
+        </div>
+      </section>
+
+      <!-- Sıfırla / Yeniden Başlat Butonu & İmza -->
+      <div class="card-footer">
+        <button id="restart-game-btn" class="btn-ghost">
+          <span>🔄</span> Yeni Tur Başlat
+        </button>
+        <div class="footer-creator-badge">
+          <span>⭐</span> Geliştirici & Tasarım: <strong>Asaf</strong>
+        </div>
+      </div>
+    </main>
+
+    <!-- Oyun Sonu Modalı -->
+    <div class="modal-overlay" id="endgame-modal" aria-hidden="true" role="dialog">
+      <div class="modal-card">
+        <div class="modal-emoji" id="modal-emoji">🎉</div>
+        <h2 class="modal-title" id="modal-title">Tebrikler Asaf, Kazandın!</h2>
+        <p class="modal-subtitle" id="modal-subtitle">Gizli sayıyı başarıyla buldun!</p>
+        
+        <div class="modal-stats">
+          <div class="modal-stat-item">
+            <span class="modal-stat-label">Gizli Sayı</span>
+            <span class="modal-stat-value highlight" id="modal-secret-number">42</span>
+          </div>
+          <div class="modal-stat-item">
+            <span class="modal-stat-label">Kazanılan Puan</span>
+            <span class="modal-stat-value score-highlight" id="modal-earned-points">+10</span>
+          </div>
+          <div class="modal-stat-item">
+            <span class="modal-stat-label">Toplam Puan</span>
+            <span class="modal-stat-value" id="modal-total-score">10</span>
+          </div>
+        </div>
+
+        <div class="modal-details-box" id="modal-details-box">
+          <div id="modal-name-status">👤 Gizli İsim: <strong id="modal-secret-name">ISAAC NEWTON</strong></div>
+        </div>
+
+        <div class="high-score-banner" id="new-record-banner">
+          ⭐ TEBRİKLER ASAF! YENİ REKOR KIRDIN! ⭐
+        </div>
+
+        <div class="modal-actions-col">
+          <button id="modal-play-again-btn" class="btn-primary pulse-btn">
+            <span>Sonraki Tura Geç</span>
+            <span>🎮</span>
+          </button>
+          <button id="modal-leaderboard-btn" class="btn-secondary" style="margin-top: 0.65rem; width: 100%;">
+            <span>🏆 Sıralama & Liderlik Tablosunu Gör</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Puan Sıralaması (Leaderboard) Modalı -->
+    <div class="modal-overlay" id="leaderboard-modal" aria-hidden="true" role="dialog">
+      <div class="modal-card leaderboard-card">
+        <div class="modal-header-row">
+          <div class="modal-emoji-small">🏆</div>
+          <div class="modal-title-wrap">
+            <h2 class="modal-title">Puan Sıralaması</h2>
+            <p class="modal-subtitle">Asaf & Tüm Yarışmacıların Liderlik Tablosu</p>
+          </div>
+        </div>
+
+        <!-- Filtre Sekmeleri -->
+        <div class="leaderboard-tabs" role="tablist">
+          <button class="lb-tab active" data-filter="all">Tüm Skorlar</button>
+          <button class="lb-tab" data-filter="easy">Kolay</button>
+          <button class="lb-tab" data-filter="medium">Orta</button>
+          <button class="lb-tab" data-filter="hard">Zor</button>
+        </div>
+
+        <!-- Sıralama Listesi -->
+        <div class="leaderboard-list-wrap">
+          <div class="leaderboard-list" id="leaderboard-list">
+            <!-- Dinamik Oyuncu Kartları app.js tarafından basılacak -->
+          </div>
+        </div>
+
+        <!-- Sıralama Alt Kontroller -->
+        <div class="leaderboard-footer-actions">
+          <button id="lb-add-current-btn" class="btn-secondary btn-sm" title="Mevcut Puanımı Kaydet">
+            <span>💾</span> Puanımı Kaydet
+          </button>
+          <button id="lb-reset-btn" class="btn-ghost btn-sm text-danger" title="Sıralamayı Sıfırla">
+            <span>🗑️</span> Sıfırla
+          </button>
+          <button id="lb-close-btn" class="btn-primary btn-sm">
+            Kapat 👍
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Oyuncu İsmi Düzenleme Modalı -->
+    <div class="modal-overlay" id="name-edit-modal" aria-hidden="true" role="dialog">
+      <div class="modal-card name-edit-card">
+        <div class="modal-emoji">👑</div>
+        <h2 class="modal-title">Oyuncu Profilini Güncelle</h2>
+        <p class="modal-subtitle">Oyunda ve sıralamada görünecek ismin</p>
+        
+        <form id="edit-player-form" onsubmit="return false;" style="margin-top: 1.2rem;">
+          <div class="input-wrapper" style="margin-bottom: 1.2rem;">
+            <input 
+              type="text" 
+              id="edit-player-input" 
+              placeholder="Oyuncu isminiz..." 
+              maxlength="20"
+              value="Asaf" 
+              class="styled-text-input"
+              required
+              aria-label="Oyuncu İsmi"
+            />
+          </div>
+          <div style="display: flex; gap: 0.65rem;">
+            <button type="submit" id="save-player-name-btn" class="btn-primary" style="flex: 1;">
+              Kaydet ✨
+            </button>
+            <button type="button" id="cancel-player-name-btn" class="btn-ghost">
+              İptal
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Nasıl Oynanır Modalı -->
+    <div class="modal-overlay" id="help-modal" aria-hidden="true" role="dialog">
+      <div class="modal-card help-card">
+        <div class="modal-emoji">📖</div>
+        <h2 class="modal-title">Nasıl Oynanır?</h2>
+        <div class="help-content">
+          <div class="help-item">
+            <span class="help-icon">⭐</span>
+            <p><strong>Puan Sistemi:</strong> Her doğru sayıda <strong>+10 Puan</strong> kazanırsın. Gizli ismi doğru bilerek ekstra <strong>+10 Puan</strong> daha kazanabilirsin!</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">⏱️</span>
+            <p><strong>Süre Sınırı:</strong> Süre dolmadan önce sayıyı bulmalısın (Kolay: 60s, Orta: 45s, Zor: 30s).</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">🚨</span>
+            <p><strong>Son Hak Jokeri:</strong> Yalnızca <strong>1 hakkın kaldığında</strong> sistem olası sayılardan sana <strong>4 seçenekli şıklar (A, B, C, D)</strong> sunar!</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">👤</span>
+            <p><strong>Gizli İsim:</strong> Sayıyı ararken ipucu ve açılan harflerden yararlanarak gizli şahsiyeti tahmin edebilirsin.</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">🔥</span>
+            <p><strong>Sıcaklık:</strong>
+              <br>• 🔥 <strong>Ateş Gibi:</strong> Fark ≤ 3
+              <br>• ☀️ <strong>Sıcak:</strong> Fark ≤ 8
+              <br>• ⛅ <strong>Ilık:</strong> Fark ≤ 16
+              <br>• ❄️ <strong>Soğuk:</strong> Fark > 16
+            </p>
+          </div>
+        </div>
+        <button id="help-close-btn" class="btn-primary" style="margin-top: 1.5rem; width: 100%;">
+          Anladım, Başlayalım! 👍
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
